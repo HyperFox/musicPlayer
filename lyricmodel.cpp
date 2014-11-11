@@ -1,3 +1,6 @@
+/*
+  * 本程序使用GPLv2协议发布
+  */
 #include "lyricmodel.h"
 
 lyricLine::lyricLine(int m, QString t) {
@@ -6,8 +9,8 @@ lyricLine::lyricLine(int m, QString t) {
 }
 
 lyricLine::lyricLine() {
-    milliseconds = ~ (unsigned int) 0 / 2 -100000;//signed int的最大值
-    text = "";
+    milliseconds = ~ (unsigned int) 0 / 2;//signed int的最大值
+    text = " ";
 }
 
 int lyricLine::getmilliseconds() const {
@@ -19,7 +22,6 @@ QString lyricLine::gettext() const {
 }
 
 lyricModel::lyricModel(QObject *parent) : QAbstractListModel(parent) {
-    addSingleLine(lyricLine());//避免出现一些bug
     m_currentIndex = 0;
 }
 
@@ -44,11 +46,11 @@ QVariant lyricModel::data(const QModelIndex & index, int role) const {
 
 bool lyricModel::setPathofSong(QString path) {
     clearData();
+    setcurrentIndex(0);
     QFileInfo fi(path);
     path = fi.path().mid(7) + "/" + fi.completeBaseName() + ".lrc";
     fi.setFile(path);
     if (fi.exists() && fi.isReadable()) {
-        lyricLine l;
         QFile flyric(path);
         if (! flyric.open(QFile::ReadOnly | QFile::Text)) {
             return false;
@@ -74,14 +76,14 @@ bool lyricModel::setPathofSong(QString path) {
         flyric.close();
         return true;
     } else {
+        addSingleLine(lyricLine(0, tr("未找到歌词")));
         return false;
     }
 }
 
 int lyricModel::getIndex(int position) {
-    if (m_currentIndex + 1 >= lyricData.count())
-        return m_currentIndex;
-    if (lyricData.at(m_currentIndex + 1).getmilliseconds() <= position) {
+    if (m_currentIndex + 1 < lyricData.count() &&
+            lyricData.at(m_currentIndex + 1).getmilliseconds() <= position) {
         m_currentIndex ++;
         emit currentIndexChanged();
     }
@@ -89,6 +91,12 @@ int lyricModel::getIndex(int position) {
 }
 
 int lyricModel::findIndex(int position) {
+    //bug fix
+    if (position == 0) {
+        setcurrentIndex(0);
+        return 0;
+    }
+    //bug fix end
     int mid = lyricData.count() / 2,diff = mid / 2;
     while (1) {
         if (lyricData.at(mid).getmilliseconds() <= position) {
@@ -137,7 +145,7 @@ QHash<int, QByteArray> lyricModel::roleNames() const {
 }
 
 void lyricModel::clearData() {
-    beginRemoveRows(QModelIndex(), 0, lyricData.count() - 1);
+    beginRemoveRows(QModelIndex(), 0, lyricData.count());
     lyricData.clear();
     endRemoveRows();
 }

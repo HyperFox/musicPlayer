@@ -1,3 +1,6 @@
+/*
+  * 本程序使用GPLv2协议发布
+  */
 #ifndef LYRICMODEL_H
 #define LYRICMODEL_H
 
@@ -22,7 +25,6 @@ private:
 class lyricModel : public QAbstractListModel {
     Q_OBJECT
 public:
-    //不是所有函数都用到了，有些函数估计要用可实际上发现没有用到，暂时保留着吧
     explicit lyricModel(QObject *parent = 0);
     int rowCount(const QModelIndex & parent = QModelIndex()) const;
     QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;

@@ -17,6 +17,10 @@ Rectangle {
         //注意：使用该控件必须要保证运行环境下已安装解码器(linux: GStreamer)
         id: ado
         source: ""
+        onSourceChanged: {
+            lyricModel.setPathofSong(source);
+            sprogress.value = 0;
+        }
         onPositionChanged: {
             sprogress.value = position;
             if (lyric.handled) {
@@ -32,9 +36,6 @@ Rectangle {
             case Audio.PlayingState:
                 btnplay.checked = true;
                 break;
-            case Audio.StoppedState:
-                sprogress.value = 0;
-                break;
             }
         }
         onStatusChanged: {
@@ -42,7 +43,11 @@ Rectangle {
             switch (status) {
             case Audio.Loaded:
                 btnplay.checkable = true;
-                ttitle.text = metaData.title;
+                if (metaData.title) {
+                    ttitle.text = metaData.title;
+                } else {
+                    ttitle.text = "musicPlayer";//TODO
+                }
                 sprogress.maximumValue = duration;
                 play();//自动播放
                 break;
@@ -68,6 +73,9 @@ Rectangle {
                     break;
                 }
                 break;
+            case Audio.EndOfMedia:
+                sprogress.value = 0;
+                break;
             }
         }
     }
@@ -77,8 +85,8 @@ Rectangle {
         property Audio target: ado
         nameFilters: [  "MP3 files (*.mp3)", "Wave files (*.wav)","All files (*)" ]
         onAccepted: {
+            target.source = "";
             target.source = fmusic.fileUrl;
-            lyricModel.setPathofSong(fmusic.fileUrl);
         }
     }
     Rectangle {
@@ -126,7 +134,7 @@ Rectangle {
                     width: control.width
                     height: control.height
                     radius: width / 2
-                    color: Qt.rgba(0,0,0,0)
+                    color: control.hovered ? "white" : Qt.rgba(0,0,0,0)
                     border.width: 1
                     border.color: control.hovered ? "#4c4c4c" : "#c0c0c0"
                     Text {
@@ -152,7 +160,7 @@ Rectangle {
                     width: control.width
                     height: control.height
                     radius: width / 2
-                    color: Qt.rgba(0,0,0,0)
+                    color: control.hovered ? "white" : Qt.rgba(0,0,0,0)
                     border.width: 1
                     border.color: control.hovered ? "#4c4c4c" : "#c0c0c0"
                     Text {
@@ -178,7 +186,7 @@ Rectangle {
                     width: control.width
                     height: control.height
                     radius: width / 2
-                    color: Qt.rgba(0,0,0,0)
+                    color: control.hovered ? "white" : Qt.rgba(0,0,0,0)
                     border.width: 1
                     border.color: control.hovered ? "#4c4c4c" : "#c0c0c0"
                     Text {
@@ -367,7 +375,7 @@ Rectangle {
             anchors.top: imgalbum.bottom
             anchors.topMargin: 10
             clip: true
-            property bool handled: false
+            property bool handled: true
             highlight: Rectangle {
                 color: Qt.rgba(0,0,0,0)
                 Behavior on y {
