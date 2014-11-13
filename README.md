@@ -1,4 +1,15 @@
 musicPlayer
 ===========
 
-this is a music player written in QML and C++.
+这是一个用QML和C++混合编程写的音乐播放器.
+
+####TODO list####
+
+* 添加歌曲列表
+* 添加循环模式切换
+* 添加设置页
+  * 自动播放
+  * 歌词文件搜索位置
+  * 自动搜索歌曲位置
+* 添加网络下载?
+* 添加网络广播?
