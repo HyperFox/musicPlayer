@@ -29,7 +29,6 @@ Rectangle {
             } else {
                 lyric.currentIndex = lyricModel.getIndex(position);
             }
-            //lyric.positionViewAtIndex(lyric.currentIndex, ListView.Center);
         }
         onPlaybackStateChanged: {
             switch (playbackState) {
@@ -261,7 +260,7 @@ Rectangle {
             anchors.right: parent.right
             anchors.rightMargin: 4
             checkable: true
-            onClicked: lyric.visible = checked
+            onClicked: lyricMask.visible = checked
             tooltip: qsTr("显示歌词")
             style: ButtonStyle {
                 background: Rectangle {
@@ -286,13 +285,46 @@ Rectangle {
                 }
             }
         }
+        /*Button {
+            id: btnloopMode
+            width: 20
+            height: 20
+            anchors.top: btnlrc.bottom
+            anchors.topMargin: 10
+            anchors.right: parent.right
+            anchors.rightMargin: 4
+            checkable: true
+            onClicked: lyricMask.visible = checked
+            tooltip: qsTr("单曲播放")
+            style: ButtonStyle {
+                background: Rectangle {
+                    width: control.width
+                    height: control.height
+                    radius: 3
+                    color: Qt.rgba(0,0,0,0)
+                    Image {
+                        id: imgloopMode
+                        anchors.centerIn: parent
+                        source: "qrc:/resource/lrc.svg"
+                    }
+                    DropShadow {
+                        visible: control.checked || control.hovered
+                        anchors.fill: imglrc
+                        horizontalOffset: 0
+                        verticalOffset: 0
+                        radius: 1
+                        samples: 2
+                        source: imglrc
+                    }
+                }
+            }
+        }*/
         MouseArea {
             anchors.left: btnmin.right
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: seperator.bottom
             property point clickPos
-            property point delta
             onPressed: {
                 clickPos  = Qt.point(mouseX,mouseY)
             }
@@ -375,13 +407,16 @@ Rectangle {
             anchors.top: imgalbum.bottom
             anchors.topMargin: 10
             clip: true
+            spacing: 3
+            highlightRangeMode: ListView.StrictlyEnforceRange
+            preferredHighlightBegin: 8
+            preferredHighlightEnd: 30
             property bool handled: true
             highlight: Rectangle {
                 color: Qt.rgba(0,0,0,0)
                 Behavior on y {
-                    SpringAnimation {
-                        spring: 3
-                        damping: 0.2
+                    SmoothedAnimation {
+                        duration: 300
                     }
                 }
             }
@@ -398,6 +433,20 @@ Rectangle {
                     font.pointSize: 10
                 }
             }
+        }
+        Image {
+            id: imglyricMask
+            visible: false
+            anchors.top: imgalbum.bottom
+            anchors.horizontalCenter: parent.horizontalCenter
+            source: "qrc:/resource/lyricmask.png"
+        }
+        OpacityMask {
+            id: lyricMask
+            visible: false
+            anchors.fill: lyric
+            source: lyric
+            maskSource: imglyricMask
         }
         Slider {
             id: sprogress

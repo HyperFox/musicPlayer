@@ -9,5 +9,6 @@
         <file>resource/handle.png</file>
         <file>resource/menu.svg</file>
         <file>resource/lrc.svg</file>
+        <file>resource/lyricmask.png</file>
     </qresource>
 </RCC>

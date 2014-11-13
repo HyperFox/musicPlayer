@@ -51,7 +51,7 @@ private:
     void clearData();
 
     QHash<int, QByteArray> roleNames() const;
-    QList<lyricLine> lyricData;
+    QList<lyricLine> lyricData, tempData;
     int m_currentIndex;
 };
 

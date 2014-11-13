@@ -59,7 +59,6 @@ bool lyricModel::setPathofSong(QString path) {
         QString textLine;
         QTextStream sin(& flyric);
         int milliseconds;
-        beginInsertRows(QModelIndex(), lyricData.count(), lyricData.count());
         while (! sin.atEnd()) {
             textLine = sin.readLine();
             textLine.mid(1,1).toInt(& ok, 10);
@@ -72,7 +71,6 @@ bool lyricModel::setPathofSong(QString path) {
             textLine = textLine.mid(10);
             addSingleLine(lyricLine(milliseconds, textLine));
         }
-        endInsertRows();
         flyric.close();
         return true;
     } else {
@@ -119,7 +117,7 @@ int lyricModel::currentIndex() const {
 }
 
 void lyricModel::setcurrentIndex(const int & i) {
-    if ((i < lyricData.count()) && m_currentIndex != i) {
+    if ((i == 0 || (i < lyricData.count())) && m_currentIndex != i) {
         m_currentIndex = i;
         emit currentIndexChanged();
     }
