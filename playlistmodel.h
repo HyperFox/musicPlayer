@@ -13,6 +13,8 @@ public:
     QString getauthor() const;
     QString gettitle() const;
     QUrl getpath() const;
+    void setauthor(QString author);
+    void settitle(QString title);
 
 private:
     QString m_author, m_title;

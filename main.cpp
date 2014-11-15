@@ -12,6 +12,9 @@
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    app.setApplicationName("musicPlayer");
+    app.setOrganizationName("Hyperfox");
+
     qmlRegisterType<lyricModel>("dataModel", 1, 0, "LyricModel");
     qmlRegisterType<playListModel>("dataModel", 1, 0, "PlayListModel");
 

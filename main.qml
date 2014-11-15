@@ -39,7 +39,6 @@ Rectangle {
             }
         }
         onStatusChanged: {
-            //btnplay.checked = false;
             switch (status) {
             case Audio.NoMedia:
                 console.log("status:nomedia");
@@ -51,6 +50,12 @@ Rectangle {
                 console.log("status:loaded");
                 sprogress.maximumValue = duration;
                 play();//自动播放
+                if (metaData.title) {
+                    plm.setCurrentTitle(metaData.title);
+                }
+                if (metaData.albumArtist) {
+                    plm.setCurrentAuthor(metaData.albumArtist);
+                }
                 break;
             case Audio.Buffering:
                 console.log("status:buffering");
@@ -96,9 +101,6 @@ Rectangle {
                     plm.randomIndex();
                     break;
                 }
-                break;
-            case Audio.UnknownStatus:
-                console.log("status:unknown status");
                 break;
             }
         }
@@ -473,17 +475,21 @@ Rectangle {
                 height: 20
                 color: Qt.rgba(0,0,0,0)
                 Text {
+                    width: 170
                     anchors.left: parent.left
-                    anchors.leftMargin: 35
+                    anchors.leftMargin: 45
                     text: title
+                    elide: Text.ElideRight
                     color: "#4c4c4c"
                     font.pointSize: 10
                     font.bold: parent.ListView.isCurrentItem
                 }
                 Text {
+                    width: 80
                     anchors.right: parent.right
-                    anchors.rightMargin: 35
+                    anchors.rightMargin: 45
                     text: author
+                    elide: Text.ElideRight
                     color: "#4c4c4c"
                     font.pointSize: 10
                     font.bold: parent.ListView.isCurrentItem
@@ -492,7 +498,7 @@ Rectangle {
                     anchors.fill: parent
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                     onClicked: {
-                        if (mouse.button == Qt.RightButton) {
+                        if (mouse.button === Qt.RightButton) {
                             plm.remove(index, index);
                         }
                     }
@@ -624,7 +630,22 @@ Rectangle {
             anchors.verticalCenter: btnplay.verticalCenter
             anchors.right: btnplay.left
             anchors.rightMargin: 50
-            onClicked: plm.currentIndex --
+            onClicked: {
+                switch (btnloopMode.loopMode) {
+                    case 0:
+                        //单曲播放
+                    case 1:
+                        //单曲循环
+                    case 2:
+                        //顺序播放
+                        plm.currentIndex --
+                        break;
+                    case 3:
+                        //随机播放
+                        plm.randomIndex();
+                        break;
+                }
+            }
             style: ButtonStyle {
                 background: Image {
                     id: imgbackward
@@ -646,7 +667,22 @@ Rectangle {
             anchors.verticalCenter: btnplay.verticalCenter
             anchors.left: btnplay.right
             anchors.leftMargin: 50
-            onClicked: plm.currentIndex ++
+            onClicked: {
+                switch (btnloopMode.loopMode) {
+                    case 0:
+                        //单曲播放
+                    case 1:
+                        //单曲循环
+                    case 2:
+                        //顺序播放
+                        plm.currentIndex ++
+                        break;
+                    case 3:
+                        //随机播放
+                        plm.randomIndex();
+                        break;
+                }
+            }
             style: ButtonStyle {
                 background: Image {
                     id: imgforward

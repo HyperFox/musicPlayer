@@ -18,6 +18,14 @@ QString song::gettitle() const {
     return m_title;
 }
 
+void song::setauthor(QString author) {
+    m_author = author;
+}
+
+void song::settitle(QString title) {
+    m_title = title;
+}
+
 playListModel::playListModel(QObject *parent) : QAbstractListModel(parent) {
     m_currentIndex = -1;
 }
@@ -124,12 +132,24 @@ void playListModel::remove(int first, int last) {
     }
 }
 
-void setCurrentTitle(QString title) {
-    ;
+void playListModel::setCurrentTitle(QString title) {
+    QModelIndex mi = createIndex(m_currentIndex, 0, (void *) 0);
+    QVector<int> role;
+    role.append(titleRole);
+    song s = playListData.at(m_currentIndex);
+    s.settitle(title);
+    playListData.replace(m_currentIndex, s);
+    emit dataChanged(mi, mi, role);
 }
 
-void setCurrentAuthor(QString author) {
-    ;
+void playListModel::setCurrentAuthor(QString author) {
+    QModelIndex mi = createIndex(m_currentIndex, 0, (void *) 0);
+    QVector<int> role;
+    role.append(authorRole);
+    song s = playListData.at(m_currentIndex);
+    s.setauthor(author);
+    playListData.replace(m_currentIndex, s);
+    emit dataChanged(mi, mi, role);
 }
 
 void playListModel::setCurrentIndex(const int & i) {
