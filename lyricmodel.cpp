@@ -3,14 +3,14 @@
   */
 #include "lyricmodel.h"
 
+lyricLine::lyricLine() {
+    milliseconds = INT_MAX;
+    text = " ";
+}
+
 lyricLine::lyricLine(int m, QString t) {
     milliseconds = m;
     text = t;
-}
-
-lyricLine::lyricLine() {
-    milliseconds = ~ (unsigned int) 0 / 2;//signed int的最大值
-    text = " ";
 }
 
 int lyricLine::getmilliseconds() const {
@@ -23,6 +23,10 @@ QString lyricLine::gettext() const {
 
 lyricModel::lyricModel(QObject *parent) : QAbstractListModel(parent) {
     m_currentIndex = 0;
+}
+
+int lyricModel::currentIndex() const {
+    return m_currentIndex;
 }
 
 int lyricModel::rowCount(const QModelIndex & parent) const {
@@ -79,15 +83,6 @@ bool lyricModel::setPathofSong(QString path) {
     }
 }
 
-int lyricModel::getIndex(int position) {
-    if (m_currentIndex + 1 < lyricData.count() &&
-            lyricData.at(m_currentIndex + 1).getmilliseconds() <= position) {
-        m_currentIndex ++;
-        emit currentIndexChanged();
-    }
-    return m_currentIndex;
-}
-
 int lyricModel::findIndex(int position) {
     //bug fix
     if (position == 0) {
@@ -95,10 +90,10 @@ int lyricModel::findIndex(int position) {
         return 0;
     }
     //bug fix end
-    int mid = lyricData.count() / 2,diff = mid / 2;
+    int countless = lyricData.count() - 1, mid = lyricData.count() / 2, diff = mid / 2;
     while (1) {
         if (lyricData.at(mid).getmilliseconds() <= position) {
-            if (lyricData.at(mid + 1).getmilliseconds() > position) {
+            if (mid < countless && lyricData.at(mid + 1).getmilliseconds() > position) {
                 break;
             } else {
                 mid += diff;
@@ -107,20 +102,21 @@ int lyricModel::findIndex(int position) {
             mid -= diff;
         }
         diff /= 2;
+        if (diff == 0) {
+            break;
+        }
     }
     setcurrentIndex(mid);
     return mid;
 }
 
-int lyricModel::currentIndex() const {
-    return m_currentIndex;
-}
-
-void lyricModel::setcurrentIndex(const int & i) {
-    if ((i == 0 || (i < lyricData.count())) && m_currentIndex != i) {
-        m_currentIndex = i;
+int lyricModel::getIndex(int position) {
+    if (m_currentIndex + 1 < lyricData.count() &&
+            lyricData.at(m_currentIndex + 1).getmilliseconds() <= position) {
+        m_currentIndex ++;
         emit currentIndexChanged();
     }
+    return m_currentIndex;
 }
 
 void lyricModel::addSingleLine(lyricLine l) {
@@ -135,6 +131,13 @@ void lyricModel::removeTopLine() {
     endRemoveRows();
 }
 
+void lyricModel::setcurrentIndex(const int & i) {
+    if ((i == 0 || (i < lyricData.count())) && m_currentIndex != i) {
+        m_currentIndex = i;
+        emit currentIndexChanged();
+    }
+}
+
 QHash<int, QByteArray> lyricModel::roleNames() const {
     QHash<int, QByteArray> r;
     r[timeRole] = "time";
@@ -143,7 +146,7 @@ QHash<int, QByteArray> lyricModel::roleNames() const {
 }
 
 void lyricModel::clearData() {
-    beginRemoveRows(QModelIndex(), 0, lyricData.count());
+    beginResetModel();
     lyricData.clear();
-    endRemoveRows();
+    endResetModel();
 }

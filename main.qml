@@ -1,6 +1,8 @@
 /*
   * 本程序使用GPLv2协议发布
   */
+import dataModel 1.0
+
 import QtQuick 2.2
 import QtQuick.Controls 1.1
 import QtQuick.Controls.Styles 1.1
@@ -18,43 +20,50 @@ Rectangle {
         id: ado
         source: ""
         onSourceChanged: {
-            lyricModel.setPathofSong(source);
-            sprogress.value = 0;
+            lm.setPathofSong(source);
         }
         onPositionChanged: {
             sprogress.value = position;
-            if (lyric.handled) {
-                lyric.currentIndex = lyricModel.findIndex(position);
-                lyric.handled = false;
-            } else {
-                lyric.currentIndex = lyricModel.getIndex(position);
-            }
         }
         onPlaybackStateChanged: {
             switch (playbackState) {
             case Audio.PlayingState:
                 btnplay.checked = true;
+                anmimgalbum.running = true;
+                break;
+            case Audio.PausedState:
+            case Audio.StoppedState:
+                btnplay.checked = false;
+                anmimgalbum.running = false;
                 break;
             }
         }
         onStatusChanged: {
-            btnplay.checked = false;
+            //btnplay.checked = false;
             switch (status) {
+            case Audio.NoMedia:
+                console.log("status:nomedia");
+                break;
+            case Audio.Loading:
+                console.log("status:loading");
+                break;
             case Audio.Loaded:
-                btnplay.checkable = true;
-                if (metaData.title) {
-                    ttitle.text = metaData.title;
-                } else {
-                    ttitle.text = "musicPlayer";//TODO
-                }
+                console.log("status:loaded");
                 sprogress.maximumValue = duration;
                 play();//自动播放
                 break;
+            case Audio.Buffering:
+                console.log("status:buffering");
+                break;
+            case Audio.Stalled:
+                console.log("status:stalled");
+                break;
+            case Audio.Buffered:
+                console.log("status:buffered");
+                break;
             case Audio.InvalidMedia:
-                btnplay.checkable = false;
+                console.log("status:invalid media");
                 switch (error) {
-                case Audio.NoError:
-                    break;
                 case Audio.FormatError:
                     ttitle.text = qsTr("需要安装解码器");
                     break;
@@ -73,19 +82,48 @@ Rectangle {
                 }
                 break;
             case Audio.EndOfMedia:
+                console.log("status:end of media");
+                lm.currentIndex = 0;
                 sprogress.value = 0;
+                switch (btnloopMode.loopMode) {
+                case 1:
+                    ado.play();
+                    break;
+                case 2:
+                    plm.currentIndex ++;
+                    break;
+                case 3:
+                    plm.randomIndex();
+                    break;
+                }
+                break;
+            case Audio.UnknownStatus:
+                console.log("status:unknown status");
                 break;
             }
+        }
+    }
+    PlayListModel {
+        id: plm
+        onCurrentIndexChanged: {
+            ado.source = getcurrentPath();
+            playList.currentIndex = currentIndex;
+        }
+    }
+    LyricModel {
+        id: lm
+        onCurrentIndexChanged: {
+            lyric.currentIndex = currentIndex;
         }
     }
     FileDialog {
         id:fmusic
         title: qsTr("选择一个音乐文件")
+        selectMultiple: true;
         property Audio target: ado
-        nameFilters: [  "MP3 files (*.mp3)", "Wave files (*.wav)","All files (*)" ]
+        nameFilters: [  qsTr("MP3 文件 (*.mp3)"), qsTr("WAV 文件 (*.wav)"), qsTr("WMA 文件 (*.wma)"), qsTr("所有文件 (*)") ]
         onAccepted: {
-            target.source = "";
-            target.source = fmusic.fileUrl;
+            plm.add(fmusic.fileUrls);
         }
     }
     Rectangle {
@@ -260,7 +298,10 @@ Rectangle {
             anchors.right: parent.right
             anchors.rightMargin: 4
             checkable: true
-            onClicked: lyricMask.visible = checked
+            onClicked: {
+                playList.visible = ! checked;
+                lyricMask.visible = checked;
+            }
             tooltip: qsTr("显示歌词")
             style: ButtonStyle {
                 background: Rectangle {
@@ -285,7 +326,7 @@ Rectangle {
                 }
             }
         }
-        /*Button {
+        Button {
             id: btnloopMode
             width: 20
             height: 20
@@ -293,8 +334,26 @@ Rectangle {
             anchors.topMargin: 10
             anchors.right: parent.right
             anchors.rightMargin: 4
-            checkable: true
-            onClicked: lyricMask.visible = checked
+            property int loopMode: 0
+            onLoopModeChanged: {
+                switch (loopMode) {
+                case 0:
+                    tooltip = qsTr("单曲播放")
+                    break;
+                case 1:
+                    tooltip = qsTr("单曲循环")
+                    break;
+                case 2:
+                    tooltip = qsTr("顺序播放");
+                    break;
+                case 3:
+                    tooltip = qsTr("随机播放");
+                    break;
+                default:
+                    loopMode = 0;
+                }
+            }
+            onClicked: loopMode++
             tooltip: qsTr("单曲播放")
             style: ButtonStyle {
                 background: Rectangle {
@@ -305,20 +364,22 @@ Rectangle {
                     Image {
                         id: imgloopMode
                         anchors.centerIn: parent
-                        source: "qrc:/resource/lrc.svg"
-                    }
-                    DropShadow {
-                        visible: control.checked || control.hovered
-                        anchors.fill: imglrc
-                        horizontalOffset: 0
-                        verticalOffset: 0
-                        radius: 1
-                        samples: 2
-                        source: imglrc
+                        source: {
+                            switch (control.loopMode) {
+                            case 1:
+                                return "qrc:/resource/loop_one.svg"
+                            case 2:
+                                return "qrc:/resource/loop_all.svg"
+                            case 3:
+                                return "qrc:/resource/loop_random.svg"
+                            default:
+                                return "qrc:/resource/loop_no.svg"
+                            }
+                        }
                     }
                 }
             }
-        }*/
+        }
         MouseArea {
             anchors.left: btnmin.right
             anchors.right: parent.right
@@ -350,7 +411,12 @@ Rectangle {
             duration: 10000
             loops: Animation.Infinite
             running: false
-            onRunningChanged: if (running==false) {from=imgalbum.rotation,to=from+360}
+            onRunningChanged: {
+                if (running === false) {
+                    from = imgalbum.rotation;
+                    to = from+360;
+                }
+            }
         }
         Slider {
             id: svolumn
@@ -396,7 +462,45 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: imgalbum.bottom
             anchors.topMargin: 10
-            //TODO
+            clip: true
+            highlight: Rectangle {
+                //TODO
+                color: Qt.rgba(255,0,0,0)
+            }
+            model: plm
+            delegate: Rectangle {
+                width: parent.width
+                height: 20
+                color: Qt.rgba(0,0,0,0)
+                Text {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 35
+                    text: title
+                    color: "#4c4c4c"
+                    font.pointSize: 10
+                    font.bold: parent.ListView.isCurrentItem
+                }
+                Text {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 35
+                    text: author
+                    color: "#4c4c4c"
+                    font.pointSize: 10
+                    font.bold: parent.ListView.isCurrentItem
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: {
+                        if (mouse.button == Qt.RightButton) {
+                            plm.remove(index, index);
+                        }
+                    }
+                    onDoubleClicked: {
+                        plm.currentIndex = index;
+                    }
+                }
+            }
         }
         ListView {
             id: lyric
@@ -411,7 +515,6 @@ Rectangle {
             highlightRangeMode: ListView.StrictlyEnforceRange
             preferredHighlightBegin: 8
             preferredHighlightEnd: 30
-            property bool handled: true
             highlight: Rectangle {
                 color: Qt.rgba(0,0,0,0)
                 Behavior on y {
@@ -420,7 +523,7 @@ Rectangle {
                     }
                 }
             }
-            model: lyricModel
+            model: lm
             delegate: Rectangle {
                 width: parent.width
                 height: 15
@@ -428,9 +531,10 @@ Rectangle {
                 Text {
                     anchors.centerIn: parent
                     horizontalAlignment: Text.AlignHCenter
-                    text: "" + textLine
+                    text: textLine
                     color: "#4c4c4c"
                     font.pointSize: 10
+                    font.bold: parent.ListView.isCurrentItem
                 }
             }
         }
@@ -461,13 +565,15 @@ Rectangle {
             property bool handled: false
             onPressedChanged: {
                 handled = true;
-                lyric.handled = true;//有人拖动进度条,通知lyric重新定位歌词
             }
             onValueChanged: {
                 if (handled && ado.seekable) {
+                    lm.findIndex(value);
                     ado.seek(value);
                     ado.play();
                     handled = false;
+                } else {
+                    lm.getIndex(value);
                 }
             }
             style: SliderStyle {
@@ -491,8 +597,11 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: sprogress.bottom
             anchors.topMargin: 10
-            onCheckedChanged: {
-               checked ? (anmimgalbum.running = true,ado.play()) : (anmimgalbum.running = false,ado.pause())
+            checkable: true
+            onClicked: {
+                if (ado.hasAudio) {
+                    (ado.playbackState === Audio.PlayingState) ? ado.pause() : ado.play();
+                }
             }
             style: ButtonStyle {
                 background: Image {
@@ -515,6 +624,7 @@ Rectangle {
             anchors.verticalCenter: btnplay.verticalCenter
             anchors.right: btnplay.left
             anchors.rightMargin: 50
+            onClicked: plm.currentIndex --
             style: ButtonStyle {
                 background: Image {
                     id: imgbackward
@@ -536,6 +646,7 @@ Rectangle {
             anchors.verticalCenter: btnplay.verticalCenter
             anchors.left: btnplay.right
             anchors.leftMargin: 50
+            onClicked: plm.currentIndex ++
             style: ButtonStyle {
                 background: Image {
                     id: imgforward
